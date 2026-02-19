@@ -91,16 +91,19 @@ function handleFile(input){
   document.getElementById('loadingOverlay').classList.add('show');
   const reader=new FileReader();
   reader.onload=function(e){
-    try{
-      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
-      const nd=processWorkbook(wb);
-      if(nd){D=nd;renderAll();
-        document.getElementById('fileName').textContent='현재: '+file.name;
-        document.getElementById('fileStatus').textContent='✓ 로드완료 ('+D.totalRec+'건)';
-        document.getElementById('fileStatus').style.color='#22c55e';
-      }
-    }catch(err){alert('오류: '+err.message);document.getElementById('fileStatus').textContent='✗ 오류';document.getElementById('fileStatus').style.color='#ef4444'}
-    document.getElementById('loadingOverlay').classList.remove('show');
+    setTimeout(function(){
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+        const nd=processWorkbook(wb);
+        if(nd){D=nd;renderAll();
+          document.getElementById('fileName').textContent='현재: '+file.name;
+          document.getElementById('fileStatus').textContent='✓ 로드완료 ('+D.totalRec+'건)';
+          document.getElementById('fileStatus').style.color='#22c55e';
+        }
+      }catch(err){alert('오류: '+err.message);document.getElementById('fileStatus').textContent='✗ 오류';document.getElementById('fileStatus').style.color='#ef4444'}
+      document.getElementById('loadingOverlay').classList.remove('show');
+      input.value='';
+    },50);
   };
   reader.readAsArrayBuffer(file);
 }
@@ -129,7 +132,7 @@ function processWorkbook(wb){
       if(!eq)continue;
       const stopTime=parseFloat(r[11])||0, nonStopTime=parseFloat(r[12])||0;
       const time=Math.max(stopTime,nonStopTime);
-      if(time>1000)return;
+      if(time>1000)continue;
       const defect=parseFloat(r[18])||0;
       const stopYN=(r[19]||'').toString().trim();
       const line=eq[0]; // G, H, K
