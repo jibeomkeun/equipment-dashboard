@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>설비조정이력 분석 v1.7</title>
+<title>설비조정이력 분석 v1.8</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -66,7 +66,7 @@ table.ht thead th:first-child{z-index:4}
 </head>
 <body>
 <div class="hd">
-<h1>📊 설비조정이력 분석 <span class="ver">v1.7</span></h1>
+<h1>📊 설비조정이력 분석 <span class="ver">v1.8</span></h1>
 <p id="info">엑셀 파일을 업로드하면 분석이 시작됩니다</p>
 </div>
 <div class="file-bar">
@@ -237,17 +237,19 @@ function showDetail(eq,date,sortBy){
   var rows=(D.allRows||[]).filter(function(r){return r.eq===eq&&r.ds===date});
   if(!rows.length){closeModal();return}
   rows.sort(function(a,b){return b[sortBy]-a[sortBy]});
-  var totalDef=rows.reduce(function(s,r){return s+r.defect},0);
-  var totalTime=rows.reduce(function(s,r){return s+r.time},0);
+  var totalAll=rows.length;
+  var top10=rows.slice(0,10);
+  var totalDef=top10.reduce(function(s,r){return s+r.defect},0);
+  var totalTime=top10.reduce(function(s,r){return s+r.time},0);
   var label=sortBy==='defect'?'불량수량':'조정시간';
-  document.getElementById('modalTitle').textContent=eq+' · '+date+' 상세이력 ('+label+' 내림차순, '+rows.length+'건)';
+  document.getElementById('modalTitle').textContent=eq+' · '+date+' Worst 10 ('+label+' 내림차순, 전체 '+totalAll+'건 중 상위 '+top10.length+'건)';
   var t='<table><thead><tr><th>#</th><th>항목</th><th>상세조정내용</th><th>불량수량</th><th>시간(분)</th><th>정지</th></tr></thead><tbody>';
-  rows.forEach(function(r,i){
+  top10.forEach(function(r,i){
     var defCls=sortBy==='defect'&&i===0?' class="highlight"':'';
     var timeCls=sortBy==='time'&&i===0?' class="highlight"':'';
     t+='<tr><td>'+(i+1)+'</td><td>'+r.sub+'</td><td>'+(r.detail||'-')+'</td><td'+defCls+'>'+Math.round(r.defect).toLocaleString()+'</td><td'+timeCls+'>'+Math.round(r.time).toLocaleString()+'</td><td>'+(r.stop?'⛔':'')+'</td></tr>';
   });
-  t+='<tr style="background:#1a1a1a;font-weight:700"><td></td><td>합계</td><td></td><td>'+Math.round(totalDef).toLocaleString()+'</td><td>'+Math.round(totalTime).toLocaleString()+'</td><td></td></tr>';
+  t+='<tr style="background:#1a1a1a;font-weight:700"><td></td><td>합계 (Top10)</td><td></td><td>'+Math.round(totalDef).toLocaleString()+'</td><td>'+Math.round(totalTime).toLocaleString()+'</td><td></td></tr>';
   t+='</tbody></table>';
   document.getElementById('modalBody').innerHTML=t;
   document.getElementById('modalOverlay').classList.add('show');
