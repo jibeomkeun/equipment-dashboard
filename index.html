@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>설비조정이력 분석 Dashboard</title>
+<title>설비조정이력 분석 v1.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0}
 .hd{background:linear-gradient(135deg,#1e293b,#334155);padding:16px 20px;border-bottom:2px solid #3b82f6}
-.hd h1{font-size:20px;color:#60a5fa}.hd p{font-size:12px;color:#94a3b8;margin-top:4px}
+.hd h1{font-size:20px;color:#60a5fa}.hd .ver{font-size:11px;color:#94a3b8;font-weight:400;margin-left:6px}.hd p{font-size:12px;color:#94a3b8;margin-top:4px}
 .file-bar{background:#0f172a;padding:10px 20px;border-bottom:1px solid #334155;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .file-btn{background:#3b82f6;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:44px;touch-action:manipulation}
 .file-btn:active{background:#2563eb;transform:scale(0.97)}
@@ -55,18 +55,18 @@ table.ht th{background:#334155;color:#e2e8f0;position:sticky;top:0;z-index:1}
 .modal .close-btn:hover{color:#ef4444}
 .modal .highlight{color:#ef4444;font-weight:700}
 .hm-click{cursor:pointer;transition:outline .15s}.hm-click:hover{outline:2px solid #60a5fa;outline-offset:-1px}
-#fileInput{display:none}
+#fileInput{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0,0,0,0)}
 .line-label{font-size:12px;font-weight:700;padding:4px 12px;border-radius:6px;display:inline-block;margin-bottom:4px}
 </style>
 </head>
 <body>
 <div class="hd">
-<h1>📊 설비조정이력 PM调整 분석 Dashboard</h1>
+<h1>📊 설비조정이력 분석 <span class="ver">v1.0</span></h1>
 <p id="info">필터: PM调整 Only | 停机/开机 제외 | >1000분 제외</p>
 </div>
 <div class="file-bar">
-<button class="file-btn" onclick="document.getElementById('fileInput').click()">📂 파일 선택</button>
-<input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)">
+<label class="file-btn" for="fileInput">📂 파일 선택</label>
+<input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFile(this)">
 <span class="file-name" id="fileName">현재: _2602__POLE_滁州稼动日别现况Rev1_0213.xlsx</span>
 <span class="file-status" id="fileStatus">✓ 로드완료</span>
 </div>
