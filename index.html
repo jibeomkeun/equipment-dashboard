@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>설비조정이력 분석 v1.5</title>
+<title>설비조정이력 분석 v1.6</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -66,7 +66,7 @@ table.ht thead th:first-child{z-index:4}
 </head>
 <body>
 <div class="hd">
-<h1>📊 설비조정이력 분석 <span class="ver">v1.5</span></h1>
+<h1>📊 설비조정이력 분석 <span class="ver">v1.6</span></h1>
 <p id="info">엑셀 파일을 업로드하면 분석이 시작됩니다</p>
 </div>
 <div class="file-bar">
@@ -245,25 +245,47 @@ function showDetail(eq,date,sortBy){
   rows.forEach(function(r,i){
     var defCls=sortBy==='defect'&&i===0?' class="highlight"':'';
     var timeCls=sortBy==='time'&&i===0?' class="highlight"':'';
-    t+='<tr><td>'+(i+1)+'</td><td>'+r.sub+'</td><td>'+(r.detail||'-')+'</td><td'+defCls+'>'+Math.round(r.defect).toLocaleString()+'</td><td'+timeCls+'>'+Math.round(r.time)+'</td><td>'+(r.stop?'⛔':'')+'</td></tr>';
+    t+='<tr><td>'+(i+1)+'</td><td>'+r.sub+'</td><td>'+(r.detail||'-')+'</td><td'+defCls+'>'+Math.round(r.defect).toLocaleString()+'</td><td'+timeCls+'>'+Math.round(r.time).toLocaleString()+'</td><td>'+(r.stop?'⛔':'')+'</td></tr>';
   });
-  t+='<tr style="background:#334155;font-weight:700"><td></td><td>합계</td><td></td><td>'+Math.round(totalDef).toLocaleString()+'</td><td>'+Math.round(totalTime)+'</td><td></td></tr>';
+  t+='<tr style="background:#334155;font-weight:700"><td></td><td>합계</td><td></td><td>'+Math.round(totalDef).toLocaleString()+'</td><td>'+Math.round(totalTime).toLocaleString()+'</td><td></td></tr>';
   t+='</tbody></table>';
   document.getElementById('modalBody').innerHTML=t;
   document.getElementById('modalOverlay').classList.add('show');
 }
 function closeModal(){document.getElementById('modalOverlay').classList.remove('show')}
 
-function makeDailyChart(canvasId, data, title, barColor){
-  return new Chart(canvasId,{type:'bar',data:{labels:data.map(function(r){return r['일자str']}),datasets:[
+function showDayDetail(date,lineFilt){
+  var rows=(D.allRows||[]).filter(function(r){return r.ds===date&&(!lineFilt||r.line===lineFilt)});
+  if(!rows.length){closeModal();return}
+  rows.sort(function(a,b){return b.defect-a.defect||b.time-a.time});
+  var totalDef=rows.reduce(function(s,r){return s+r.defect},0);
+  var totalTime=rows.reduce(function(s,r){return s+r.time},0);
+  var titleTxt=date+' 상세이력'+(lineFilt?' ('+lineFilt+' Line)':' (전체)')+' · 불량수량 내림차순, '+rows.length+'건';
+  document.getElementById('modalTitle').textContent=titleTxt;
+  var t='<table><thead><tr><th>#</th><th>Line</th><th>설비</th><th>항목</th><th>상세조정내용</th><th>불량수량</th><th>시간(분)</th></tr></thead><tbody>';
+  rows.forEach(function(r,i){
+    var defCls=i===0?' class="highlight"':'';
+    t+='<tr><td>'+(i+1)+'</td><td>'+r.line+'</td><td>'+r.eq+'</td><td>'+r.sub+'</td><td>'+(r.detail||'-')+'</td><td'+defCls+'>'+Math.round(r.defect).toLocaleString()+'</td><td>'+Math.round(r.time).toLocaleString()+'</td></tr>';
+  });
+  t+='<tr style="background:#334155;font-weight:700"><td></td><td></td><td></td><td>합계</td><td></td><td>'+Math.round(totalDef).toLocaleString()+'</td><td>'+Math.round(totalTime).toLocaleString()+'</td></tr>';
+  t+='</tbody></table>';
+  document.getElementById('modalBody').innerHTML=t;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function makeDailyChart(canvasId, data, title, barColor, lineFilt){
+  var ch=new Chart(canvasId,{type:'bar',data:{labels:data.map(function(r){return r['일자str']}),datasets:[
     {label:'건수',data:data.map(function(r){return r.cnt}),backgroundColor:barColor+'B3',borderRadius:4,yAxisID:'y',order:2},
     {label:'불량',data:data.map(function(r){return Math.round(r.defect)}),type:'line',borderColor:'#ef4444',borderWidth:2,pointRadius:3,pointBackgroundColor:'#ef4444',yAxisID:'y1',tension:.3,order:1},
     {label:'시간(분)',data:data.map(function(r){return Math.round(r.time)}),type:'line',borderColor:'#22c55e',borderWidth:2,pointRadius:3,pointBackgroundColor:'#22c55e',yAxisID:'y1',tension:.3,order:1}
-  ]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}},tooltip:{backgroundColor:'#1e293b',titleColor:'#60a5fa',bodyColor:'#e2e8f0',callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y.toLocaleString()}}}},scales:{
+  ]},options:{responsive:true,maintainAspectRatio:true,onClick:function(evt,els){
+    if(!els.length)return;var idx=els[0].index;var date=data[idx]['일자str'];showDayDetail(date,lineFilt||null);
+  },plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}},tooltip:{backgroundColor:'#1e293b',titleColor:'#60a5fa',bodyColor:'#e2e8f0',callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y.toLocaleString()}}}},scales:{
     x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#1e293b'}},
     y:{position:'left',ticks:{color:barColor,callback:function(v){return v.toLocaleString()}},grid:{color:'#334155'},title:{display:true,text:'건수',color:barColor,font:{size:10}}},
     y1:{position:'right',ticks:{color:'#ef4444',font:{size:9},callback:function(v){return v.toLocaleString()}},grid:{drawOnChartArea:false},title:{display:true,text:'불량/시간',color:'#ef4444',font:{size:10}}}
   }}});
+  return ch;
 }
 
 function makeStopChart(canvasId, data, barColorStop, barColorNon){
@@ -320,13 +342,13 @@ function renderAll(){
   '<div class="pn"><div class="bx"><h3>🔥 설비 일자별 불량수량</h3>'+legend+'<div class="hc" id="hm_def"></div></div></div>'+
   '<div class="pn"><div class="bx"><h3>🔥 설비 일자별 조정시간(분)</h3>'+legend+'<div class="hc" id="hm_time"></div></div></div>';
 
-  charts.push(makeDailyChart('dAll', D.daily, 'Total', '#3b82f6'));
+  charts.push(makeDailyChart('dAll', D.daily, 'Total', '#3b82f6', null));
   charts.push(makeStopChart('dAllS', D.daily, '#ef4444', '#22c55e'));
-  charts.push(makeDailyChart('dG', D.daily_G, 'G Line', '#06b6d4'));
+  charts.push(makeDailyChart('dG', D.daily_G, 'G Line', '#06b6d4', 'G'));
   charts.push(makeStopChart('dGS', D.daily_G, '#ef4444', '#06b6d4'));
-  charts.push(makeDailyChart('dH', D.daily_H, 'H Line', '#22c55e'));
+  charts.push(makeDailyChart('dH', D.daily_H, 'H Line', '#22c55e', 'H'));
   charts.push(makeStopChart('dHS', D.daily_H, '#ef4444', '#22c55e'));
-  charts.push(makeDailyChart('dK', D.daily_K, 'K Line', '#f59e0b'));
+  charts.push(makeDailyChart('dK', D.daily_K, 'K Line', '#f59e0b', 'K'));
   charts.push(makeStopChart('dKS', D.daily_K, '#ef4444', '#f59e0b'));
 
   document.getElementById('hm_def').innerHTML=buildDailyHT(D.hm_def,'불량수량',D.eq_order,D.all_dates);
