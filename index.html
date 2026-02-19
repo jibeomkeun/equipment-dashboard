@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>설비조정이력 분석 v1.2</title>
+<title>설비조정이력 분석 v1.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -63,7 +63,7 @@ table.ht th{background:#334155;color:#e2e8f0;position:sticky;top:0;z-index:1}
 </head>
 <body>
 <div class="hd">
-<h1>📊 설비조정이력 분석 <span class="ver">v1.2</span></h1>
+<h1>📊 설비조정이력 분석 <span class="ver">v1.3</span></h1>
 <p id="info">엑셀 파일을 업로드하면 분석이 시작됩니다</p>
 </div>
 <div class="file-bar">
@@ -153,7 +153,8 @@ function processWorkbook(wb){
       var defect=parseFloat(r[18])||0;
       var stopYN=(r[19]||'').toString().trim();
       var line=eq[0];
-      allRows.push({ds:ds,eq:eq,sub:sub,defect:defect,time:time,stop:stopYN==='停',line:line,dateStr:dateStr});
+      var detail=(r[15]||'').toString().trim();
+      allRows.push({ds:ds,eq:eq,sub:sub,detail:detail,defect:defect,time:time,stop:stopYN==='停',line:line,dateStr:dateStr});
     }
   }
   if(allRows.length===0){alert('PM调整 데이터가 없습니다.');return null}
@@ -232,13 +233,13 @@ function showDetail(eq,date,sortBy){
   var totalTime=rows.reduce(function(s,r){return s+r.time},0);
   var label=sortBy==='defect'?'불량수량':'조정시간';
   document.getElementById('modalTitle').textContent=eq+' · '+date+' 상세이력 ('+label+' 내림차순, '+rows.length+'건)';
-  var t='<table><thead><tr><th>#</th><th>조정항목</th><th>불량수량</th><th>시간(분)</th><th>정지</th></tr></thead><tbody>';
+  var t='<table><thead><tr><th>#</th><th>항목</th><th>상세조정내용</th><th>불량수량</th><th>시간(분)</th><th>정지</th></tr></thead><tbody>';
   rows.forEach(function(r,i){
     var defCls=sortBy==='defect'&&i===0?' class="highlight"':'';
     var timeCls=sortBy==='time'&&i===0?' class="highlight"':'';
-    t+='<tr><td>'+(i+1)+'</td><td>'+r.sub+'</td><td'+defCls+'>'+Math.round(r.defect).toLocaleString()+'</td><td'+timeCls+'>'+Math.round(r.time)+'</td><td>'+(r.stop?'⛔':'')+'</td></tr>';
+    t+='<tr><td>'+(i+1)+'</td><td>'+r.sub+'</td><td>'+(r.detail||'-')+'</td><td'+defCls+'>'+Math.round(r.defect).toLocaleString()+'</td><td'+timeCls+'>'+Math.round(r.time)+'</td><td>'+(r.stop?'⛔':'')+'</td></tr>';
   });
-  t+='<tr style="background:#334155;font-weight:700"><td></td><td>합계</td><td>'+Math.round(totalDef).toLocaleString()+'</td><td>'+Math.round(totalTime)+'</td><td></td></tr>';
+  t+='<tr style="background:#334155;font-weight:700"><td></td><td>합계</td><td></td><td>'+Math.round(totalDef).toLocaleString()+'</td><td>'+Math.round(totalTime)+'</td><td></td></tr>';
   t+='</tbody></table>';
   document.getElementById('modalBody').innerHTML=t;
   document.getElementById('modalOverlay').classList.add('show');
