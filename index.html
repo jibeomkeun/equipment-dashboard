@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>설비조정이력 분석 v1.3</title>
+<title>설비조정이력 분석 v1.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -63,7 +63,7 @@ table.ht th{background:#334155;color:#e2e8f0;position:sticky;top:0;z-index:1}
 </head>
 <body>
 <div class="hd">
-<h1>📊 설비조정이력 분석 <span class="ver">v1.3</span></h1>
+<h1>📊 설비조정이력 분석 <span class="ver">v1.4</span></h1>
 <p id="info">엑셀 파일을 업로드하면 분석이 시작됩니다</p>
 </div>
 <div class="file-bar">
@@ -71,6 +71,7 @@ table.ht th{background:#334155;color:#e2e8f0;position:sticky;top:0;z-index:1}
 <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(this)">
 <span class="file-name" id="fileName">파일을 선택해주세요</span>
 <span class="file-status" id="fileStatus" style="color:#94a3b8">대기중</span>
+<button id="clearBtn" style="display:none;background:#ef4444;color:#fff;padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;min-height:36px;touch-action:manipulation" onclick="clearData()">🗑 초기화</button>
 </div>
 <div class="kpi" id="kpiArea" style="display:none"></div>
 <div class="tabs" id="tabArea" style="display:none"></div>
@@ -108,9 +109,11 @@ function handleFile(input){
           document.getElementById('kpiArea').style.display='';
           document.getElementById('tabArea').style.display='';
           renderAll();
+          try{localStorage.setItem('dashData',JSON.stringify(D));localStorage.setItem('dashFile',file.name)}catch(e){}
           document.getElementById('fileName').textContent='현재: '+file.name;
           document.getElementById('fileStatus').textContent='✓ 로드완료 ('+D.totalRec+'건)';
           document.getElementById('fileStatus').style.color='#22c55e';
+          document.getElementById('clearBtn').style.display='';
         }
       }catch(err){
         alert('오류: '+err.message);
@@ -324,6 +327,35 @@ function renderAll(){
   document.getElementById('hm_def').innerHTML=buildDailyHT(D.hm_def,'불량수량',D.eq_order,D.all_dates);
   document.getElementById('hm_time').innerHTML=buildDailyHT(D.hm_time,'time',D.eq_order,D.all_dates);
 }
+
+function clearData(){
+  localStorage.removeItem('dashData');localStorage.removeItem('dashFile');
+  D=null;charts.forEach(function(c){try{c.destroy()}catch(e){}});charts=[];
+  document.getElementById('kpiArea').style.display='none';document.getElementById('kpiArea').innerHTML='';
+  document.getElementById('tabArea').style.display='none';document.getElementById('tabArea').innerHTML='';
+  document.getElementById('root').innerHTML='<div class="welcome"><div class="arrow">👆</div><h2>파일을 업로드해주세요</h2><p>📂 위 버튼을 눌러 엑셀 파일을 선택하세요</p></div>';
+  document.getElementById('fileName').textContent='파일을 선택해주세요';
+  document.getElementById('fileStatus').textContent='대기중';document.getElementById('fileStatus').style.color='#94a3b8';
+  document.getElementById('clearBtn').style.display='none';
+  document.getElementById('info').textContent='엑셀 파일을 업로드하면 분석이 시작됩니다';
+}
+
+(function(){
+  try{
+    var saved=localStorage.getItem('dashData');
+    if(saved){
+      D=JSON.parse(saved);
+      var fn=localStorage.getItem('dashFile')||'저장된 데이터';
+      document.getElementById('kpiArea').style.display='';
+      document.getElementById('tabArea').style.display='';
+      renderAll();
+      document.getElementById('fileName').textContent='현재: '+fn;
+      document.getElementById('fileStatus').textContent='✓ 저장됨 ('+D.totalRec+'건)';
+      document.getElementById('fileStatus').style.color='#22c55e';
+      document.getElementById('clearBtn').style.display='';
+    }
+  }catch(e){localStorage.removeItem('dashData')}
+})();
 </script>
 </body>
 </html>
